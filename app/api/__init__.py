@@ -8,6 +8,7 @@ API ルーターのエントリーポイント。
 """
 
 from fastapi import APIRouter
+
 from .v1 import api_router as v1_router
 
 # アプリ全体のメイン API ルーター
