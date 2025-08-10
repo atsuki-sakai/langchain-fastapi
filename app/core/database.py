@@ -1,3 +1,13 @@
+"""
+データベース接続管理。
+
+- 同期エンジン: マイグレーションやテスト向け（SQLAlchemy ORM セッション）
+- 非同期エンジン: アプリ実行時の非同期処理向け（AsyncSession）
+
+TypeScript の `knex` + `pg` での Pool と同様の役割を担い、
+依存関係としてセッションを供給するユーティリティも提供します。
+"""
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -39,7 +49,7 @@ Base = declarative_base()
 
 
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
-    """Get async database session dependency."""
+    """非同期 DB セッションを提供する依存関係。"""
     if not AsyncSessionLocal:
         raise RuntimeError("Database not configured")
     
@@ -55,7 +65,7 @@ async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 def get_db():
-    """Get synchronous database session dependency."""
+    """同期 DB セッションを提供する依存関係。"""
     if not SessionLocal:
         raise RuntimeError("Database not configured")
     
@@ -67,7 +77,7 @@ def get_db():
 
 
 async def init_db() -> None:
-    """Initialize database tables."""
+    """DB テーブルを初期化（マイグレーション相当の簡易処理）。"""
     if not async_engine:
         raise RuntimeError("Async database engine not configured")
     
@@ -83,6 +93,6 @@ async def init_db() -> None:
 
 
 async def close_db() -> None:
-    """Close database connections."""
+    """DB 接続をクローズし、プールを開放。"""
     if async_engine:
         await async_engine.dispose()
