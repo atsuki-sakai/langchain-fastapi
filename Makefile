@@ -1,6 +1,6 @@
 # 開発用コマンド集
 
-.PHONY: install dev dev-prod clean venv test test-unit test-integration lint format check help migrate docker-up docker-down docker-logs docker-clean
+.PHONY: install dev dev-prod clean venv test test-unit test-integration lint format check help migrate docker-up docker-down docker-logs docker-clean openapi
 
 # 仮想環境の場所
 VENV_DIR := .venv
@@ -62,6 +62,11 @@ lint:
 
 # フォーマット・リント・テストを実行
 check: format lint test
+
+# OpenAPI をファイルにエクスポート（Here-Docなしで安全に実行）
+openapi:
+	source $(VENV_DIR)/bin/activate; \
+	python -c "import json; from main import app; spec=app.openapi(); open('openapi.json','w',encoding='utf-8').write(json.dumps(spec, ensure_ascii=False, indent=2)); print('✅ Wrote openapi.json')"
 
 # データベースマイグレーション（開発環境）
 migrate-dev:
