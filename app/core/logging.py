@@ -1,3 +1,10 @@
+"""
+構造化ロギングの設定とミドルウェア。
+
+`structlog` を使い、JSON 形式のログや開発向けのリッチ表示を切り替えます。
+TypeScript の `pino` や `winston` に相当する仕組みです。
+"""
+
 import logging
 import structlog
 import sys
@@ -6,15 +13,15 @@ from .config import get_settings
 
 
 def configure_logging() -> None:
-    """Configure structured logging with structlog."""
+    """`structlog` を用いた構造化ロギングを初期化。"""
     settings = get_settings()
     
     # Configure structlog
     timestamper = structlog.processors.TimeStamper(fmt="ISO")
     
+    # structlog 側のプロセッサチェーン（stdlib の ProcessorFormatter とは分離）
     shared_processors = [
         structlog.contextvars.merge_contextvars,
-        structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
         structlog.stdlib.PositionalArgumentsFormatter(),
@@ -25,17 +32,14 @@ def configure_logging() -> None:
     ]
     
     if settings.log_format == "json":
-        # JSON formatter for production
+        # stdlib のフォーマッタはできるだけ素朴に（構造化は structlog 側で）
         formatter = structlog.stdlib.ProcessorFormatter(
             processor=structlog.dev.ConsoleRenderer(colors=False),
-            foreign_pre_chain=shared_processors,
         )
         shared_processors.append(structlog.processors.JSONRenderer())
     else:
-        # Human-readable formatter for development
         formatter = structlog.stdlib.ProcessorFormatter(
             processor=structlog.dev.ConsoleRenderer(),
-            foreign_pre_chain=shared_processors,
         )
         shared_processors.append(structlog.dev.ConsoleRenderer())
     
@@ -62,12 +66,12 @@ def configure_logging() -> None:
 
 
 def get_logger(name: str) -> structlog.BoundLogger:
-    """Get a configured logger instance."""
+    """構成済みロガーを取得。"""
     return structlog.get_logger(name)
 
 
 class LoggingMiddleware:
-    """Middleware to add request ID and log requests."""
+    """リクエストIDを付与してリクエスト開始/終了を記録するミドルウェア。"""
     
     def __init__(self, app):
         self.app = app
@@ -89,11 +93,11 @@ class LoggingMiddleware:
             path=scope["path"],
         )
         
-        # Log request start
+        # リクエスト開始
         self.logger.info("Request started")
         
         # Process request
         await self.app(scope, receive, send)
         
-        # Log request end
+        # リクエスト終了
         self.logger.info("Request completed")
