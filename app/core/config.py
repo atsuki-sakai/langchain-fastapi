@@ -1,3 +1,11 @@
+"""
+アプリケーション設定の読み込みとバリデーション。
+
+環境変数/.env を Pydantic Settings で読み込み、型安全に扱います。
+TypeScript の `zod` + `dotenv` 構成に近く、検証エラーで起動時に失敗します。
+環境(`ENVIRONMENT`)に応じて `.env.dev` などを自動選択します。
+"""
+
 from typing import Optional, List
 import os
 from functools import lru_cache
@@ -8,7 +16,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """アプリ設定（環境変数と.envから読み込み）"""
+    """アプリ設定（環境変数と.envから読み込み）。
+
+    validation_alias を指定することで、ENV 名と属性名の乖離を吸収しています。
+    """
 
     # Pydantic Settings の基本設定（デフォルトは .env）
     model_config = SettingsConfigDict(
@@ -88,7 +99,7 @@ class Settings(BaseSettings):
 
 
 def get_env_file() -> str:
-    """現在のENVIRONMENTに応じて読み込む.envファイルを決定する"""
+    """現在の `ENVIRONMENT` に応じて読み込む .env ファイルを決定。"""
     env = os.getenv("ENVIRONMENT", "development")
 
     if env == "development":
@@ -103,7 +114,7 @@ def get_env_file() -> str:
 
 @lru_cache()
 def get_settings() -> Settings:
-    """Settings のインスタンスをキャッシュして返す（env_fileは動的に切替）"""
+    """Settings のインスタンスをキャッシュして返す（env_file は動的切替）。"""
     env_file = get_env_file()
     # インスタンス生成時に _env_file を指定して読み込む
     return Settings(_env_file=env_file)
