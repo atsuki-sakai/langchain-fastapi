@@ -10,13 +10,15 @@ TypeScript/Express での単純な `GET /health` と同様ですが、
 import time
 from datetime import datetime
 from typing import Any
+
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.api.deps.database import get_db
 from app.core.config import get_settings
-from app.models.base import HealthCheckResponse
 from app.core.logging import get_logger
+from app.models.base import HealthCheckResponse
 
 router = APIRouter()
 settings = get_settings()
@@ -27,7 +29,7 @@ start_time = time.time()  # アプリ起動時刻を保持し uptime を計算
 
 
 @router.get("", response_model=HealthCheckResponse)
-@router.get("/", response_model=HealthCheckResponse)
+@router.get("/", response_model=HealthCheckResponse, include_in_schema=False)
 async def health_check() -> Any:
     """基本的なヘルスチェック。
 
@@ -41,7 +43,7 @@ async def health_check() -> Any:
         timestamp=datetime.utcnow(),
         version=settings.version,
         environment=settings.environment,
-        uptime=time.time() - start_time
+        uptime=time.time() - start_time,
     )
 
 
@@ -58,15 +60,15 @@ async def readiness_check(db: Session = Depends(get_db)) -> Any:
         result = db.execute(text("SELECT 1 as test"))
         test_result = result.fetchone()
         logger.info(f"Database connectivity test successful: {test_result}")
-        
+
         return HealthCheckResponse(
             status="ready",
             timestamp=datetime.utcnow(),
             version=settings.version,
             environment=settings.environment,
-            uptime=time.time() - start_time
+            uptime=time.time() - start_time,
         )
-    
+
     except Exception as e:
         logger.error(f"Readiness check failed: {str(e)}", exc_info=True)
         return HealthCheckResponse(
@@ -74,7 +76,7 @@ async def readiness_check(db: Session = Depends(get_db)) -> Any:
             timestamp=datetime.utcnow(),
             version=settings.version,
             environment=settings.environment,
-            uptime=time.time() - start_time
+            uptime=time.time() - start_time,
         )
 
 
@@ -89,5 +91,5 @@ async def liveness_check() -> Any:
         timestamp=datetime.utcnow(),
         version=settings.version,
         environment=settings.environment,
-        uptime=time.time() - start_time
+        uptime=time.time() - start_time,
     )
