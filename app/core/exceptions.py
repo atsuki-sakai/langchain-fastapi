@@ -5,13 +5,14 @@ HTTP ステータスを保持しつつ、統一フォーマットのエラーレ
 TypeScript でのカスタム Error クラスと同様の利用感です。
 """
 
-from typing import Optional, Dict, Any
-from fastapi import HTTPException, status
+from typing import Any, Dict, Optional
+
+from fastapi import status
 
 
 class BaseAppException(Exception):
     """アプリケーション例外の基底クラス。"""
-    
+
     def __init__(
         self,
         message: str,
@@ -26,8 +27,12 @@ class BaseAppException(Exception):
 
 class ValidationError(BaseAppException):
     """バリデーションエラー。"""
-    
-    def __init__(self, message: str = "Validation error", details: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self,
+        message: str = "Validation error",
+        details: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
             message=message,
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -37,8 +42,12 @@ class ValidationError(BaseAppException):
 
 class NotFoundError(BaseAppException):
     """リソースが見つからないエラー。"""
-    
-    def __init__(self, message: str = "Resource not found", details: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self,
+        message: str = "Resource not found",
+        details: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
             message=message,
             status_code=status.HTTP_404_NOT_FOUND,
@@ -48,8 +57,10 @@ class NotFoundError(BaseAppException):
 
 class UnauthorizedError(BaseAppException):
     """認証エラー（未認証/トークン不正）。"""
-    
-    def __init__(self, message: str = "Unauthorized", details: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self, message: str = "Unauthorized", details: Optional[Dict[str, Any]] = None
+    ):
         super().__init__(
             message=message,
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -59,8 +70,10 @@ class UnauthorizedError(BaseAppException):
 
 class ForbiddenError(BaseAppException):
     """認可エラー（権限不足）。"""
-    
-    def __init__(self, message: str = "Forbidden", details: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self, message: str = "Forbidden", details: Optional[Dict[str, Any]] = None
+    ):
         super().__init__(
             message=message,
             status_code=status.HTTP_403_FORBIDDEN,
@@ -70,8 +83,10 @@ class ForbiddenError(BaseAppException):
 
 class ConflictError(BaseAppException):
     """競合エラー（重複など）。"""
-    
-    def __init__(self, message: str = "Conflict", details: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self, message: str = "Conflict", details: Optional[Dict[str, Any]] = None
+    ):
         super().__init__(
             message=message,
             status_code=status.HTTP_409_CONFLICT,
@@ -81,8 +96,12 @@ class ConflictError(BaseAppException):
 
 class InternalServerError(BaseAppException):
     """サーバ内部エラー。"""
-    
-    def __init__(self, message: str = "Internal server error", details: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self,
+        message: str = "Internal server error",
+        details: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
             message=message,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
