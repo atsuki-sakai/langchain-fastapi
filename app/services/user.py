@@ -1,3 +1,11 @@
+"""
+ユーザーに関するドメインサービス（ビジネスロジック）。
+
+リポジトリ層を介さずに直接 SQLAlchemy を使用していますが、
+責務は「入力検証・存在チェック・状態遷移（更新）」に限定しています。
+TypeScript の service/usecase 層に相当します。
+"""
+
 from typing import Optional, List
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -13,7 +21,7 @@ logger = get_logger(__name__)
 
 
 async def get_user_by_id(db: Session, user_id: int) -> Optional[UserInDB]:
-    """Get user by ID."""
+    """ID でユーザーを取得（存在しなければ None）。"""
     try:
         if isinstance(db, AsyncSession):
             result = await db.execute(select(UserSchema).where(UserSchema.id == user_id))
@@ -31,7 +39,7 @@ async def get_user_by_id(db: Session, user_id: int) -> Optional[UserInDB]:
 
 
 async def get_user_by_email(db: Session, email: str) -> Optional[UserInDB]:
-    """Get user by email."""
+    """メールアドレスでユーザーを取得（存在しなければ None）。"""
     try:
         if isinstance(db, AsyncSession):
             result = await db.execute(select(UserSchema).where(UserSchema.email == email))
@@ -49,7 +57,7 @@ async def get_user_by_email(db: Session, email: str) -> Optional[UserInDB]:
 
 
 async def get_user_by_username(db: Session, username: str) -> Optional[UserInDB]:
-    """Get user by username."""
+    """ユーザー名でユーザーを取得（存在しなければ None）。"""
     try:
         if isinstance(db, AsyncSession):
             result = await db.execute(select(UserSchema).where(UserSchema.username == username))
@@ -67,7 +75,7 @@ async def get_user_by_username(db: Session, username: str) -> Optional[UserInDB]
 
 
 async def create_user(db: Session, user_create: UserCreate) -> UserInDB:
-    """Create a new user."""
+    """ユーザー新規作成（重複チェックとハッシュ化を含む）。"""
     try:
         # Check if user already exists
         existing_user = await get_user_by_email(db, user_create.email)
@@ -111,7 +119,7 @@ async def create_user(db: Session, user_create: UserCreate) -> UserInDB:
 
 
 async def update_user(db: Session, user_id: int, user_update: UserUpdate) -> UserInDB:
-    """Update user information."""
+    """ユーザー情報を更新。"""
     try:
         # Get existing user
         db_user = await get_user_by_id(db, user_id)
@@ -156,7 +164,7 @@ async def change_password(
     user_id: int, 
     password_change: UserChangePassword
 ) -> UserInDB:
-    """Change user password."""
+    """ユーザーのパスワードを変更。"""
     try:
         # Get existing user
         db_user = await get_user_by_id(db, user_id)
@@ -200,7 +208,7 @@ async def change_password(
 
 
 async def authenticate_user(db: Session, email: str, password: str) -> Optional[UserInDB]:
-    """Authenticate user with email and password."""
+    """メール/パスワードで認証し、成功時にユーザーを返す。"""
     try:
         user = await get_user_by_email(db, email)
         if not user:
@@ -239,7 +247,7 @@ async def get_users(
     skip: int = 0,
     limit: int = 100
 ) -> List[UserInDB]:
-    """Get list of users with pagination."""
+    """ユーザー一覧をページングで取得。"""
     try:
         if isinstance(db, AsyncSession):
             result = await db.execute(
