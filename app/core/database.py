@@ -8,11 +8,13 @@ TypeScript の `knex` + `pg` での Pool と同様の役割を担い、
 依存関係としてセッションを供給するユーティリティも提供します。
 """
 
+from typing import AsyncGenerator
+
 from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from typing import AsyncGenerator
+
 from .config import get_settings
 
 settings = get_settings()
@@ -52,7 +54,7 @@ async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
     """非同期 DB セッションを提供する依存関係。"""
     if not AsyncSessionLocal:
         raise RuntimeError("Database not configured")
-    
+
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -68,7 +70,7 @@ def get_db():
     """同期 DB セッションを提供する依存関係。"""
     if not SessionLocal:
         raise RuntimeError("Database not configured")
-    
+
     db = SessionLocal()
     try:
         yield db
@@ -80,14 +82,14 @@ async def init_db() -> None:
     """DB テーブルを初期化（マイグレーション相当の簡易処理）。"""
     if not async_engine:
         raise RuntimeError("Async database engine not configured")
-    
+
     # Import all models here to ensure they are registered with SQLAlchemy
     from app.schemas import user  # noqa
-    
+
     async with async_engine.begin() as conn:
         # Drop all tables (use with caution!)
         # await conn.run_sync(Base.metadata.drop_all)
-        
+
         # Create all tables
         await conn.run_sync(Base.metadata.create_all)
 
