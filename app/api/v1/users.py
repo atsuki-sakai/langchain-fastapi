@@ -1,3 +1,11 @@
+"""
+ユーザー管理 API。
+
+権限制御は依存関係(`Depends`)を用いて行います。
+TypeScript での `router.get('/users', authMiddleware, handler)` に相当します。
+Pydantic モデルで入出力のスキーマを明確にし、返却は統一のレスポンスラッパーで行います。
+"""
+
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -21,16 +29,19 @@ async def list_users(
     current_user: UserInDB = Depends(get_current_superuser),
     db: Session = Depends(get_db)
 ) -> Any:
-    """List all users (superuser only)."""
+    """ユーザー一覧の取得（スーパーユーザー限定）。
+
+    - ページング用に `page` と `size` を受け取ります
+    - 実装簡略化のため `total` は取得件数から算出しています
+    """
     try:
         pagination = PaginationParams(page=page, size=size)
         users = await get_users(db, skip=pagination.offset, limit=pagination.size)
         
-        # For demonstration, we'll use the size as total
-        # In real implementation, you'd query the total count separately
+        # 簡易実装: 実運用では総件数を COUNT などで別途取得してください
         total = len(users)
         
-        # Convert to response models
+        # ORM → レスポンスモデル(Pydantic)に変換
         user_data = [User.from_orm(user) for user in users]
         
         return PaginatedResponse(
@@ -61,7 +72,7 @@ async def create_new_user(
     current_user: UserInDB = Depends(get_current_superuser),
     db: Session = Depends(get_db)
 ) -> Any:
-    """Create a new user (superuser only)."""
+    """新規ユーザー作成（スーパーユーザー限定）。"""
     try:
         user = await create_user(db, user_create)
         
@@ -87,9 +98,12 @@ async def get_user(
     current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Any:
-    """Get user by ID."""
+    """ユーザー ID からユーザーを取得。
+
+    - 本人か、またはスーパーユーザーのみが閲覧可能
+    """
     try:
-        # Users can only view their own profile unless they're superuser
+        # 本人以外はスーパーユーザーでないと閲覧不可
         if user_id != current_user.id and not current_user.is_superuser:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -126,16 +140,20 @@ async def update_user_info(
     current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Any:
-    """Update user information."""
+    """ユーザー情報の更新。
+
+    - 本人か、またはスーパーユーザーのみが更新可能
+    - 一般ユーザーは `is_active` を変更できない
+    """
     try:
-        # Users can only update their own profile unless they're superuser
+        # 本人以外はスーパーユーザーでないと更新不可
         if user_id != current_user.id and not current_user.is_superuser:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough permissions"
             )
         
-        # Non-superusers cannot change is_active status
+        # 一般ユーザーは is_active を変更不可
         if not current_user.is_superuser and user_update.is_active is not None:
             user_update.is_active = None
         
@@ -163,7 +181,7 @@ async def update_user_info(
 async def get_current_user_profile(
     current_user: UserInDB = Depends(get_current_user)
 ) -> Any:
-    """Get current user profile."""
+    """ログイン中ユーザーのプロフィール取得。"""
     return BaseResponse(
         success=True,
         message="Current user profile retrieved",
@@ -177,7 +195,10 @@ async def update_current_user_profile(
     current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Any:
-    """Update current user profile."""
+    """ログイン中ユーザーのプロフィール更新。
+
+    - 自分自身の `is_active` は変更できないように強制無効化
+    """
     try:
         # Users cannot change their own is_active status
         user_update.is_active = None
