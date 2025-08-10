@@ -1,12 +1,21 @@
+"""
+API v1 のルーター集合。
+
+このモジュールでは、`/auth`、`/users`、`/health` の各機能を
+それぞれ独立したルーターとしてまとめ、`api_router` に統合します。
+`main.py` で `/api/v1` が付与されるため、実際のエンドポイントは
+`/api/v1/auth`、`/api/v1/users`、`/api/v1/health` となります。
+"""
+
 from fastapi import APIRouter
 from .auth import router as auth_router
 from .users import router as users_router
 from .health import router as health_router
 
-# Create main API v1 router
+# v1 のメインルーター
 api_router = APIRouter()
 
-# Include all routers with their prefixes
+# 各ドメインルーターを取り込み
 api_router.include_router(
     auth_router,
     prefix="/auth",
