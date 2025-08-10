@@ -8,28 +8,20 @@ API v1 のルーター集合。
 """
 
 from fastapi import APIRouter
+
 from .auth import router as auth_router
-from .users import router as users_router
 from .health import router as health_router
+from .llm import router as llm_router
+from .users import router as users_router
 
 # v1 のメインルーター
 api_router = APIRouter()
 
 # 各ドメインルーターを取り込み
-api_router.include_router(
-    auth_router,
-    prefix="/auth",
-    tags=["authentication"]
-)
+api_router.include_router(auth_router, prefix="/auth", tags=["authentication"])
 
-api_router.include_router(
-    users_router,
-    prefix="/users",
-    tags=["users"]
-)
+api_router.include_router(users_router, prefix="/users", tags=["users"])
 
-api_router.include_router(
-    health_router,
-    prefix="/health",
-    tags=["health"]
-)
+api_router.include_router(health_router, prefix="/health", tags=["health"])
+
+api_router.include_router(llm_router, prefix="/llm", tags=["langchain"])
