@@ -1,10 +1,17 @@
+"""
+SQLAlchemy のユーザースキーマ（DB モデル）。
+
+TypeScript の ORM（Prisma/TypeORM/Sequelize）でのモデル定義に相当します。
+`app.models.user` の Pydantic モデルとは役割が異なり、こちらはテーブル定義です。
+"""
+
 from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text
 from sqlalchemy.sql import func
 from app.core.database import Base
 
 
 class User(Base):
-    """User SQLAlchemy model."""
+    """ユーザーの SQLAlchemy モデル（テーブル定義）。"""
     
     __tablename__ = "users"
     
@@ -16,7 +23,7 @@ class User(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     is_superuser = Column(Boolean, default=False, nullable=False)
     
-    # Timestamps
+    # タイムスタンプ
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     last_login = Column(DateTime(timezone=True), nullable=True)
