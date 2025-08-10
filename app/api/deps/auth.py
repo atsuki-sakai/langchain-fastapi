@@ -1,3 +1,11 @@
+"""
+認証・認可に関する依存関係（Dependency）。
+
+FastAPI では `Depends(...)` を通じて前処理（ミドルウェアに近い）を
+エンドポイント関数に差し込めます。TypeScript のミドルウェアチェーンと
+似ていますが、関数の引数解決（DI）に統合されている点が特徴です。
+"""
+
 from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -15,7 +23,11 @@ security = HTTPBearer()
 async def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> str:
-    """Get current user ID from JWT token."""
+    """JWT からユーザーIDを取得。
+
+    Authorization: Bearer <token> を想定し、JWT を検証して `sub` を返します。
+    失敗時は 401 を返します。
+    """
     try:
         token = credentials.credentials
         user_id = get_user_id_from_token(token)
@@ -32,7 +44,10 @@ async def get_current_user(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ) -> UserInDB:
-    """Get current authenticated user."""
+    """現在ログイン中のユーザーを返す。
+
+    - ユーザーが存在しない/非アクティブなら 401
+    """
     user = await get_user_by_id(db, int(user_id))
     if not user:
         raise HTTPException(
@@ -52,7 +67,7 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: UserInDB = Depends(get_current_user)
 ) -> UserInDB:
-    """Get current active user."""
+    """アクティブなログインユーザーのみ許可。"""
     if not current_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -64,7 +79,7 @@ async def get_current_active_user(
 async def get_current_superuser(
     current_user: UserInDB = Depends(get_current_user)
 ) -> UserInDB:
-    """Get current user if they are a superuser."""
+    """スーパーユーザーのみ許可。"""
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -74,7 +89,10 @@ async def get_current_superuser(
 
 
 def require_permissions(*permissions: str):
-    """Decorator to require specific permissions."""
+    """簡易パーミッションチェックのデコレータファクトリ。
+
+    実運用ではユーザー権限の集合と照合してください。
+    """
     def permission_checker(current_user: UserInDB = Depends(get_current_user)) -> UserInDB:
         # In a real implementation, you would check user permissions here
         # For now, we'll just check if the user is active
@@ -98,13 +116,16 @@ def require_permissions(*permissions: str):
 
 
 class OptionalAuth:
-    """Optional authentication dependency."""
+    """任意認証の依存関係。
+
+    トークンがあれば検証し `user_id` を返し、無ければ `None` を返します。
+    """
     
     def __call__(
         self,
         credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
     ) -> Optional[str]:
-        """Get user ID if token is provided, None otherwise."""
+        """トークンがあれば user_id、無ければ None を返す。"""
         if not credentials:
             return None
         
