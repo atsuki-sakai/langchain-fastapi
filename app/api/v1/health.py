@@ -1,3 +1,12 @@
+"""
+ヘルスチェック関連のエンドポイント。
+
+Kubernetes 等のヘルスチェック/レディネス/ライブネスに対応するため
+`/health`、`/health/ready`、`/health/live` を提供します。
+TypeScript/Express での単純な `GET /health` と同様ですが、
+ここでは Pydantic モデルを用いて厳密なレスポンススキーマを返します。
+"""
+
 import time
 from datetime import datetime
 from typing import Any
@@ -14,13 +23,19 @@ settings = get_settings()
 logger = get_logger(__name__)
 
 # Store application start time
-start_time = time.time()
+start_time = time.time()  # アプリ起動時刻を保持し uptime を計算
 
 
 @router.get("", response_model=HealthCheckResponse)
 @router.get("/", response_model=HealthCheckResponse)
 async def health_check() -> Any:
-    """Basic health check endpoint."""
+    """基本的なヘルスチェック。
+
+    - アプリが動作していること
+    - バージョンや環境情報
+    - 稼働時間(uptime)
+    を返します。
+    """
     return HealthCheckResponse(
         status="healthy",
         timestamp=datetime.utcnow(),
@@ -32,7 +47,12 @@ async def health_check() -> Any:
 
 @router.get("/ready", response_model=HealthCheckResponse)
 async def readiness_check(db: Session = Depends(get_db)) -> Any:
-    """Readiness check including database connectivity."""
+    """レディネスチェック（DB 接続確認を含む）。
+
+    DB へ `SELECT 1` を発行して接続性を確認します。
+    失敗した場合でも 200 を返す仕様にしているため、
+    実運用では適宜 503 などに変更してください。
+    """
     try:
         # Test database connection with proper SQLAlchemy 2.x text() usage
         result = db.execute(text("SELECT 1 as test"))
@@ -60,7 +80,10 @@ async def readiness_check(db: Session = Depends(get_db)) -> Any:
 
 @router.get("/live", response_model=HealthCheckResponse)
 async def liveness_check() -> Any:
-    """Liveness check to verify application is running."""
+    """ライブネスチェック。
+
+    アプリプロセスが応答するかのみを確認します。
+    """
     return HealthCheckResponse(
         status="alive",
         timestamp=datetime.utcnow(),
