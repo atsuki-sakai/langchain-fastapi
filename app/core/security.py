@@ -1,3 +1,12 @@
+"""
+セキュリティ関連のユーティリティ。
+
+- パスワードハッシュ化/検証（bcrypt）
+- JWT の発行/検証（アクセス/リフレッシュ/パスワードリセット）
+
+TypeScript での `bcrypt` と `jsonwebtoken` に相当します。
+"""
+
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from passlib.context import CryptContext
@@ -16,7 +25,7 @@ def create_access_token(
     expires_delta: Optional[timedelta] = None,
     additional_claims: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """Create JWT access token."""
+    """アクセストークン(JWT)を生成。"""
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
@@ -37,7 +46,7 @@ def create_access_token(
 
 
 def create_refresh_token(subject: str) -> str:
-    """Create JWT refresh token."""
+    """リフレッシュトークン(JWT)を生成。"""
     expire = datetime.utcnow() + timedelta(days=settings.refresh_token_expire_days)
     
     to_encode = {
@@ -52,7 +61,10 @@ def create_refresh_token(subject: str) -> str:
 
 
 def verify_token(token: str, token_type: str = "access") -> Dict[str, Any]:
-    """Verify JWT token and return payload."""
+    """JWT を検証してペイロードを返す。
+
+    token_type が一致しない場合や期限切れの場合は `UnauthorizedError`。
+    """
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         
@@ -72,7 +84,7 @@ def verify_token(token: str, token_type: str = "access") -> Dict[str, Any]:
 
 
 def get_user_id_from_token(token: str) -> str:
-    """Extract user ID from token."""
+    """トークンからユーザーID(`sub`)を取り出す。"""
     payload = verify_token(token)
     user_id = payload.get("sub")
     
@@ -83,17 +95,17 @@ def get_user_id_from_token(token: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
+    """平文パスワードとハッシュの照合。"""
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """Generate password hash."""
+    """パスワードからハッシュを生成。"""
     return pwd_context.hash(password)
 
 
 def generate_password_reset_token(email: str) -> str:
-    """Generate password reset token."""
+    """パスワードリセット用の JWT を生成。"""
     expire = datetime.utcnow() + timedelta(minutes=15)  # 15 minutes validity
     
     to_encode = {
@@ -108,7 +120,7 @@ def generate_password_reset_token(email: str) -> str:
 
 
 def verify_password_reset_token(token: str) -> str:
-    """Verify password reset token and return email."""
+    """パスワードリセットトークンを検証し、メールアドレスを返す。"""
     payload = verify_token(token, token_type="password_reset")
     email = payload.get("sub")
     
