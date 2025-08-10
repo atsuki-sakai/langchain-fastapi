@@ -1,9 +1,16 @@
+"""
+アプリケーション独自の例外クラス群。
+
+HTTP ステータスを保持しつつ、統一フォーマットのエラーレスポンスへ変換されます。
+TypeScript でのカスタム Error クラスと同様の利用感です。
+"""
+
 from typing import Optional, Dict, Any
 from fastapi import HTTPException, status
 
 
 class BaseAppException(Exception):
-    """Base application exception."""
+    """アプリケーション例外の基底クラス。"""
     
     def __init__(
         self,
@@ -18,7 +25,7 @@ class BaseAppException(Exception):
 
 
 class ValidationError(BaseAppException):
-    """Validation error exception."""
+    """バリデーションエラー。"""
     
     def __init__(self, message: str = "Validation error", details: Optional[Dict[str, Any]] = None):
         super().__init__(
@@ -29,7 +36,7 @@ class ValidationError(BaseAppException):
 
 
 class NotFoundError(BaseAppException):
-    """Resource not found exception."""
+    """リソースが見つからないエラー。"""
     
     def __init__(self, message: str = "Resource not found", details: Optional[Dict[str, Any]] = None):
         super().__init__(
@@ -40,7 +47,7 @@ class NotFoundError(BaseAppException):
 
 
 class UnauthorizedError(BaseAppException):
-    """Unauthorized access exception."""
+    """認証エラー（未認証/トークン不正）。"""
     
     def __init__(self, message: str = "Unauthorized", details: Optional[Dict[str, Any]] = None):
         super().__init__(
@@ -51,7 +58,7 @@ class UnauthorizedError(BaseAppException):
 
 
 class ForbiddenError(BaseAppException):
-    """Forbidden access exception."""
+    """認可エラー（権限不足）。"""
     
     def __init__(self, message: str = "Forbidden", details: Optional[Dict[str, Any]] = None):
         super().__init__(
@@ -62,7 +69,7 @@ class ForbiddenError(BaseAppException):
 
 
 class ConflictError(BaseAppException):
-    """Conflict error exception."""
+    """競合エラー（重複など）。"""
     
     def __init__(self, message: str = "Conflict", details: Optional[Dict[str, Any]] = None):
         super().__init__(
@@ -73,7 +80,7 @@ class ConflictError(BaseAppException):
 
 
 class InternalServerError(BaseAppException):
-    """Internal server error exception."""
+    """サーバ内部エラー。"""
     
     def __init__(self, message: str = "Internal server error", details: Optional[Dict[str, Any]] = None):
         super().__init__(
