@@ -6,17 +6,20 @@
 TypeScript の service/usecase 層に相当します。
 """
 
-from typing import Optional, List
 from datetime import datetime
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List, Optional
+
 from sqlalchemy import select, update
-from app.schemas.user import User as UserSchema
 from sqlalchemy.exc import IntegrityError
-from app.models.user import UserCreate, UserUpdate, UserInDB, UserChangePassword
-from app.core.security import get_password_hash, verify_password
-from app.core.exceptions import NotFoundError, ConflictError, ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
+
+from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.core.logging import get_logger
+from app.core.security import get_password_hash, verify_password
+from app.models.user import (UserChangePassword, UserCreate, UserInDB,
+                             UserUpdate)
+from app.schemas.user import User as UserSchema
 
 logger = get_logger(__name__)
 
@@ -25,15 +28,17 @@ async def get_user_by_id(db: Session, user_id: int) -> Optional[UserInDB]:
     """ID でユーザーを取得（存在しなければ None）。"""
     try:
         if isinstance(db, AsyncSession):
-            result = await db.execute(select(UserSchema).where(UserSchema.id == user_id))
+            result = await db.execute(
+                select(UserSchema).where(UserSchema.id == user_id)
+            )
             user = result.scalar_one_or_none()
         else:
             user = db.query(UserSchema).filter(UserSchema.id == user_id).first()
-        
+
         if user:
             return UserInDB.from_orm(user)
         return None
-    
+
     except Exception as e:
         logger.error(f"Error getting user by ID {user_id}: {str(e)}")
         raise
@@ -43,15 +48,17 @@ async def get_user_by_email(db: Session, email: str) -> Optional[UserInDB]:
     """メールアドレスでユーザーを取得（存在しなければ None）。"""
     try:
         if isinstance(db, AsyncSession):
-            result = await db.execute(select(UserSchema).where(UserSchema.email == email))
+            result = await db.execute(
+                select(UserSchema).where(UserSchema.email == email)
+            )
             user = result.scalar_one_or_none()
         else:
             user = db.query(UserSchema).filter(UserSchema.email == email).first()
-        
+
         if user:
             return UserInDB.from_orm(user)
         return None
-    
+
     except Exception as e:
         logger.error(f"Error getting user by email {email}: {str(e)}")
         raise
@@ -61,15 +68,17 @@ async def get_user_by_username(db: Session, username: str) -> Optional[UserInDB]
     """ユーザー名でユーザーを取得（存在しなければ None）。"""
     try:
         if isinstance(db, AsyncSession):
-            result = await db.execute(select(UserSchema).where(UserSchema.username == username))
+            result = await db.execute(
+                select(UserSchema).where(UserSchema.username == username)
+            )
             user = result.scalar_one_or_none()
         else:
             user = db.query(UserSchema).filter(UserSchema.username == username).first()
-        
+
         if user:
             return UserInDB.from_orm(user)
         return None
-    
+
     except Exception as e:
         logger.error(f"Error getting user by username {username}: {str(e)}")
         raise
@@ -80,7 +89,7 @@ async def create_user(db: Session, user_create: UserCreate) -> UserInDB:
     try:
         # Create new user
         hashed_password = get_password_hash(user_create.password)
-        
+
         user_data = {
             "email": user_create.email,
             "username": user_create.username,
@@ -88,9 +97,9 @@ async def create_user(db: Session, user_create: UserCreate) -> UserInDB:
             "hashed_password": hashed_password,
             "is_active": user_create.is_active,
         }
-        
+
         db_user = UserSchema(**user_data)
-        
+
         if isinstance(db, AsyncSession):
             db.add(db_user)
             try:
@@ -107,10 +116,10 @@ async def create_user(db: Session, user_create: UserCreate) -> UserInDB:
                 db.rollback()
                 raise ConflictError("User already exists")
             db.refresh(db_user)
-        
+
         logger.info(f"User created: {user_create.email}")
         return UserInDB.from_orm(db_user)
-    
+
     except (ConflictError, ValidationError):
         raise
     except Exception as e:
@@ -125,17 +134,17 @@ async def update_user(db: Session, user_id: int, user_update: UserUpdate) -> Use
         db_user = await get_user_by_id(db, user_id)
         if not db_user:
             raise NotFoundError("User not found")
-        
+
         # Prepare update data
         update_data = {}
         if user_update.full_name is not None:
             update_data["full_name"] = user_update.full_name
         if user_update.is_active is not None:
             update_data["is_active"] = user_update.is_active
-        
+
         if update_data:
             update_data["updated_at"] = datetime.utcnow()
-            
+
             if isinstance(db, AsyncSession):
                 await db.execute(
                     update(UserSchema)
@@ -144,14 +153,16 @@ async def update_user(db: Session, user_id: int, user_update: UserUpdate) -> Use
                 )
                 await db.commit()
             else:
-                db.query(UserSchema).filter(UserSchema.id == user_id).update(update_data)
+                db.query(UserSchema).filter(UserSchema.id == user_id).update(
+                    update_data
+                )
                 db.commit()
-        
+
         # Return updated user
         updated_user = await get_user_by_id(db, user_id)
         logger.info(f"User updated: {user_id}")
         return updated_user
-    
+
     except NotFoundError:
         raise
     except Exception as e:
@@ -160,9 +171,7 @@ async def update_user(db: Session, user_id: int, user_update: UserUpdate) -> Use
 
 
 async def change_password(
-    db: Session, 
-    user_id: int, 
-    password_change: UserChangePassword
+    db: Session, user_id: int, password_change: UserChangePassword
 ) -> UserInDB:
     """ユーザーのパスワードを変更。"""
     try:
@@ -170,36 +179,36 @@ async def change_password(
         db_user = await get_user_by_id(db, user_id)
         if not db_user:
             raise NotFoundError("User not found")
-        
+
         # Verify current password
-        if not verify_password(password_change.current_password, db_user.hashed_password):
+        if not verify_password(
+            password_change.current_password, db_user.hashed_password
+        ):
             raise ValidationError("Current password is incorrect")
-        
+
         # Hash new password
         new_hashed_password = get_password_hash(password_change.new_password)
-        
+
         # Update password
         update_data = {
             "hashed_password": new_hashed_password,
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.utcnow(),
         }
-        
+
         if isinstance(db, AsyncSession):
             await db.execute(
-                update(UserSchema)
-                .where(UserSchema.id == user_id)
-                .values(**update_data)
+                update(UserSchema).where(UserSchema.id == user_id).values(**update_data)
             )
             await db.commit()
         else:
             db.query(UserSchema).filter(UserSchema.id == user_id).update(update_data)
             db.commit()
-        
+
         # Return updated user
         updated_user = await get_user_by_id(db, user_id)
         logger.info(f"Password changed for user: {user_id}")
         return updated_user
-    
+
     except (NotFoundError, ValidationError):
         raise
     except Exception as e:
@@ -207,60 +216,52 @@ async def change_password(
         raise
 
 
-async def authenticate_user(db: Session, email: str, password: str) -> Optional[UserInDB]:
+async def authenticate_user(
+    db: Session, email: str, password: str
+) -> Optional[UserInDB]:
     """メール/パスワードで認証し、成功時にユーザーを返す。"""
     try:
         user = await get_user_by_email(db, email)
         if not user:
             return None
-        
+
         if not verify_password(password, user.hashed_password):
             return None
-        
+
         if not user.is_active:
             return None
-        
+
         # Update last login
         update_data = {"last_login": datetime.utcnow()}
-        
+
         if isinstance(db, AsyncSession):
             await db.execute(
-                update(UserSchema)
-                .where(UserSchema.id == user.id)
-                .values(**update_data)
+                update(UserSchema).where(UserSchema.id == user.id).values(**update_data)
             )
             await db.commit()
         else:
             db.query(UserSchema).filter(UserSchema.id == user.id).update(update_data)
             db.commit()
-        
+
         logger.info(f"User authenticated: {email}")
         return user
-    
+
     except Exception as e:
         logger.error(f"Error authenticating user {email}: {str(e)}")
         return None
 
 
-async def get_users(
-    db: Session,
-    skip: int = 0,
-    limit: int = 100
-) -> List[UserInDB]:
+async def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[UserInDB]:
     """ユーザー一覧をページングで取得。"""
     try:
         if isinstance(db, AsyncSession):
-            result = await db.execute(
-                select(UserSchema)
-                .offset(skip)
-                .limit(limit)
-            )
+            result = await db.execute(select(UserSchema).offset(skip).limit(limit))
             users = result.scalars().all()
         else:
             users = db.query(UserSchema).offset(skip).limit(limit).all()
-        
+
         return [UserInDB.from_orm(user) for user in users]
-    
+
     except Exception as e:
         logger.error(f"Error getting users: {str(e)}")
         raise
