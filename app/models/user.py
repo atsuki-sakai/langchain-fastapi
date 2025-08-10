@@ -1,3 +1,10 @@
+"""
+ユーザー関連の Pydantic モデル（リクエスト/レスポンス DTO）。
+
+TypeScript の DTO/型定義と対応し、バリデーションルールも含みます。
+`UserInDB` は DB 保存形式（ハッシュ済みパスワード等）を持つ内部用モデルです。
+"""
+
 from typing import Optional, List
 from datetime import datetime
 from pydantic import EmailStr, Field, validator
@@ -5,7 +12,7 @@ from .base import BaseSchema, TimestampSchema
 
 
 class UserBase(BaseSchema):
-    """Base user schema with common fields."""
+    """ユーザー共通フィールドの基底スキーマ。"""
     
     email: EmailStr = Field(description="User email address")
     username: str = Field(min_length=3, max_length=50, description="Username")
@@ -20,7 +27,7 @@ class UserBase(BaseSchema):
 
 
 class UserCreate(UserBase):
-    """Schema for user creation."""
+    """ユーザー作成時の入力スキーマ。"""
     
     password: str = Field(min_length=8, max_length=128, description="Password")
     password_confirm: str = Field(description="Password confirmation")
@@ -47,14 +54,14 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseSchema):
-    """Schema for user updates."""
+    """ユーザー更新時の入力スキーマ。"""
     
     full_name: Optional[str] = Field(None, max_length=100, description="Full name")
     is_active: Optional[bool] = Field(None, description="Whether the user is active")
 
 
 class UserInDB(UserBase, TimestampSchema):
-    """User schema as stored in database."""
+    """DB 保存形式のユーザースキーマ（内部用）。"""
     
     id: int = Field(description="User ID")
     hashed_password: str = Field(description="Hashed password")
@@ -66,7 +73,7 @@ class UserInDB(UserBase, TimestampSchema):
 
 
 class User(UserBase, TimestampSchema):
-    """User schema for API responses."""
+    """API レスポンス用のユーザースキーマ。"""
     
     id: int = Field(description="User ID")
     is_superuser: bool = Field(default=False, description="Whether the user is a superuser")
@@ -77,7 +84,7 @@ class User(UserBase, TimestampSchema):
 
 
 class UserLogin(BaseSchema):
-    """Schema for user login."""
+    """ユーザーログインの入力スキーマ。"""
     
     email: EmailStr = Field(description="User email address")
     password: str = Field(description="Password")
@@ -85,7 +92,7 @@ class UserLogin(BaseSchema):
 
 
 class UserChangePassword(BaseSchema):
-    """Schema for password change."""
+    """パスワード変更の入力スキーマ。"""
     
     current_password: str = Field(description="Current password")
     new_password: str = Field(min_length=8, max_length=128, description="New password")
@@ -113,7 +120,7 @@ class UserChangePassword(BaseSchema):
 
 
 class TokenPayload(BaseSchema):
-    """JWT token payload schema."""
+    """JWT のペイロードスキーマ（参考用）。"""
     
     sub: Optional[str] = None  # subject (user ID)
     exp: Optional[int] = None  # expiration time
@@ -122,7 +129,7 @@ class TokenPayload(BaseSchema):
 
 
 class Token(BaseSchema):
-    """Token response schema."""
+    """トークンレスポンススキーマ。"""
     
     access_token: str = Field(description="Access token")
     refresh_token: Optional[str] = Field(None, description="Refresh token")
@@ -131,6 +138,6 @@ class Token(BaseSchema):
 
 
 class TokenRefresh(BaseSchema):
-    """Token refresh request schema."""
+    """トークンリフレッシュ要求スキーマ。"""
     
     refresh_token: str = Field(description="Refresh token")
