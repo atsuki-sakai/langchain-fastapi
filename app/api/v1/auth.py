@@ -1,3 +1,11 @@
+"""
+認証/認可 API。
+
+ログイン、トークン発行/更新、ログインユーザー取得、パスワード変更を提供します。
+TypeScript での `passport` や `next-auth` の役割に近いですが、
+ここでは JWT を直接発行・検証します。
+"""
+
 from datetime import timedelta
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -27,7 +35,7 @@ async def register(
     user_create: UserCreate,
     db: Session = Depends(get_db)
 ) -> Any:
-    """Register a new user."""
+    """新規ユーザー登録。"""
     try:
         user = await create_user(db, user_create)
         logger.info(f"New user registered: {user.email}")
@@ -51,7 +59,7 @@ async def login(
     user_login: UserLogin,
     db: Session = Depends(get_db)
 ) -> Any:
-    """Authenticate user and return tokens."""
+    """ログインしてアクセストークン/リフレッシュトークンを発行。"""
     try:
         user = await authenticate_user(db, user_login.email, user_login.password)
         if not user:
@@ -99,7 +107,7 @@ async def login_form(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ) -> Any:
-    """Authenticate user with OAuth2 password form."""
+    """OAuth2 のフォーム入力でログイン（SwaggerのTry it out用など）。"""
     try:
         user = await authenticate_user(db, form_data.username, form_data.password)
         if not user:
@@ -148,7 +156,7 @@ async def refresh_token(
     token_refresh: TokenRefresh,
     db: Session = Depends(get_db)
 ) -> Any:
-    """Refresh access token using refresh token."""
+    """リフレッシュトークンを用いてアクセストークンを再発行。"""
     try:
         # Verify refresh token
         payload = verify_token(token_refresh.refresh_token, token_type="refresh")
@@ -207,7 +215,7 @@ async def refresh_token(
 async def get_current_user_info(
     current_user: UserInDB = Depends(get_current_user)
 ) -> Any:
-    """Get current user information."""
+    """現在のログインユーザー情報を取得。"""
     return BaseResponse(
         success=True,
         message="User information retrieved",
@@ -221,7 +229,7 @@ async def change_user_password(
     current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Any:
-    """Change current user's password."""
+    """現在のユーザーのパスワードを変更。"""
     try:
         updated_user = await change_password(db, current_user.id, password_change)
         
