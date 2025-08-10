@@ -14,6 +14,7 @@ services:
         generateValue: true
       - key: SECRET_KEY
         generateValue: true
+        sync: false
       - key: CORS_ORIGINS
         value: "https://your-frontend-domain.com"
       - key: LOG_LEVEL
