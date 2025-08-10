@@ -24,6 +24,8 @@ class BaseSchema(BaseModel):
         validate_assignment=True,
         # Allow arbitrary types (useful for complex objects)
         arbitrary_types_allowed=True,
+        # SQLAlchemy 等の ORM オブジェクトからの読み取りを許可（Pydantic v2）
+        from_attributes=True,
     )
 
 

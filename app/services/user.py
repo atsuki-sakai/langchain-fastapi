@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from app.schemas.user import User as UserSchema
+from sqlalchemy.exc import IntegrityError
 from app.models.user import UserCreate, UserUpdate, UserInDB, UserChangePassword
 from app.core.security import get_password_hash, verify_password
 from app.core.exceptions import NotFoundError, ConflictError, ValidationError
@@ -75,17 +76,8 @@ async def get_user_by_username(db: Session, username: str) -> Optional[UserInDB]
 
 
 async def create_user(db: Session, user_create: UserCreate) -> UserInDB:
-    """ユーザー新規作成（重複チェックとハッシュ化を含む）。"""
+    """ユーザー新規作成（ハッシュ化、ユニーク制約はDBで検出）。"""
     try:
-        # Check if user already exists
-        existing_user = await get_user_by_email(db, user_create.email)
-        if existing_user:
-            raise ConflictError("User with this email already exists")
-        
-        existing_username = await get_user_by_username(db, user_create.username)
-        if existing_username:
-            raise ConflictError("User with this username already exists")
-        
         # Create new user
         hashed_password = get_password_hash(user_create.password)
         
@@ -101,11 +93,19 @@ async def create_user(db: Session, user_create: UserCreate) -> UserInDB:
         
         if isinstance(db, AsyncSession):
             db.add(db_user)
-            await db.commit()
+            try:
+                await db.commit()
+            except IntegrityError:
+                await db.rollback()
+                raise ConflictError("User already exists")
             await db.refresh(db_user)
         else:
             db.add(db_user)
-            db.commit()
+            try:
+                db.commit()
+            except IntegrityError:
+                db.rollback()
+                raise ConflictError("User already exists")
             db.refresh(db_user)
         
         logger.info(f"User created: {user_create.email}")

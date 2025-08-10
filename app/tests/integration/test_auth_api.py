@@ -11,9 +11,8 @@ class TestAuthAPI:
     
     def test_health_check(self, client: TestClient):
         """Test health check endpoint."""
-        response = client.get(f"{settings.api_prefix}/v1/health")
+        response = client.get(f"{settings.api_prefix}/health")
         assert response.status_code == 200
-        
         data = response.json()
         assert data["status"] == "healthy"
         assert "timestamp" in data
@@ -31,7 +30,7 @@ class TestAuthAPI:
             "is_active": True
         }
         
-        response = client.post(f"{settings.api_prefix}/v1/auth/register", json=user_data)
+        response = client.post(f"{settings.api_prefix}/auth/register", json=user_data)
         assert response.status_code == 200
         
         data = response.json()
@@ -44,17 +43,17 @@ class TestAuthAPI:
     def test_register_duplicate_email(self, client: TestClient, test_user_data):
         """Test registration with duplicate email."""
         # First registration
-        response1 = client.post(f"{settings.api_prefix}/v1/auth/register", json=test_user_data)
+        response1 = client.post(f"{settings.api_prefix}/auth/register", json=test_user_data)
         assert response1.status_code == 200
         
         # Second registration with same email should fail
-        response2 = client.post(f"{settings.api_prefix}/v1/auth/register", json=test_user_data)
+        response2 = client.post(f"{settings.api_prefix}/auth/register", json=test_user_data)
         assert response2.status_code == 400
     
     def test_login_success(self, client: TestClient, test_user_data):
         """Test successful login."""
         # First register user
-        client.post(f"{settings.api_prefix}/v1/auth/register", json=test_user_data)
+        client.post(f"{settings.api_prefix}/auth/register", json=test_user_data)
         
         # Then login
         login_data = {
@@ -62,7 +61,7 @@ class TestAuthAPI:
             "password": test_user_data["password"]
         }
         
-        response = client.post(f"{settings.api_prefix}/v1/auth/login", json=login_data)
+        response = client.post(f"{settings.api_prefix}/auth/login", json=login_data)
         assert response.status_code == 200
         
         data = response.json()
@@ -79,28 +78,28 @@ class TestAuthAPI:
             "password": "wrongpassword"
         }
         
-        response = client.post(f"{settings.api_prefix}/v1/auth/login", json=login_data)
+        response = client.post(f"{settings.api_prefix}/auth/login", json=login_data)
         assert response.status_code == 401
     
     def test_get_current_user_without_token(self, client: TestClient):
         """Test getting current user without token."""
-        response = client.get(f"{settings.api_prefix}/v1/auth/me")
+        response = client.get(f"{settings.api_prefix}/auth/me")
         assert response.status_code == 403  # Should be unauthorized
     
     def test_get_current_user_with_token(self, client: TestClient, test_user_data):
         """Test getting current user with valid token."""
         # Register and login to get token
-        client.post(f"{settings.api_prefix}/v1/auth/register", json=test_user_data)
+        client.post(f"{settings.api_prefix}/auth/register", json=test_user_data)
         
         login_response = client.post(
-            f"{settings.api_prefix}/v1/auth/login", 
+            f"{settings.api_prefix}/auth/login", 
             json={"email": test_user_data["email"], "password": test_user_data["password"]}
         )
         token = login_response.json()["data"]["access_token"]
         
         # Use token to get current user
         headers = {"Authorization": f"Bearer {token}"}
-        response = client.get(f"{settings.api_prefix}/v1/auth/me", headers=headers)
+        response = client.get(f"{settings.api_prefix}/auth/me", headers=headers)
         
         assert response.status_code == 200
         data = response.json()

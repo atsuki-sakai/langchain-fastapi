@@ -13,7 +13,8 @@ from .v1 import api_router as v1_router
 # アプリ全体のメイン API ルーター
 api_router = APIRouter()
 
-# v1 ルーターの取り込み（`main.py` で `/api/v1` を付与済み）
+# v1 ルーターの取り込み
+# テストの期待に合わせ、`/api/v1` で到達できるようにしています。
 api_router.include_router(v1_router)
 
 # 例: 将来バージョンの追加
