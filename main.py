@@ -16,13 +16,15 @@ DB 接続の初期化/クローズを行います。
 """
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import get_settings
-from app.core.logging import configure_logging, LoggingMiddleware
-from app.core.error_handlers import setup_error_handlers
-from app.core.database import init_db, close_db
+
 from app.api import api_router
+from app.core.config import get_settings
+from app.core.database import close_db, init_db
+from app.core.error_handlers import setup_error_handlers
+from app.core.logging import LoggingMiddleware, configure_logging
 
 # Configure logging first
 configure_logging()
@@ -95,5 +97,5 @@ async def root():
         "version": settings.version,
         "environment": settings.environment,
         "docs_url": f"{settings.api_prefix}/docs",
-        "health_check": f"{settings.api_prefix}/health"
+        "health_check": f"{settings.api_prefix}/health",
     }
