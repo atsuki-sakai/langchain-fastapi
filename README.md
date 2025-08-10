@@ -135,6 +135,19 @@ make clean          # クリーンアップ
 - 本番用ハッシュ強度
 - 短いトークン有効期限
 
+## ⚠️ 既知の注意点・トラブルシューティング
+
+- Pydantic v2 互換性: `app/core/config.py` では `BaseSettings` は `pydantic_settings` からインポートしてください。
+  - 例: `from pydantic_settings import BaseSettings`
+  - ImportError が出る場合: `pip install pydantic-settings`
+- 依存関係: `requirements.txt` に `python-cors` がある場合は削除してください。CORS は FastAPI の `CORSMiddleware` で対応します。
+
+### 環境ファイルの切替
+- `ENVIRONMENT` 変数で読み込む `.env` を切り替えます。
+  - `ENVIRONMENT=development` のとき `.env.dev`
+  - `ENVIRONMENT=production` のとき `.env`
+- 例: `ENVIRONMENT=development make dev`
+
 ## 📊 監視・ログ
 
 - **構造化ログ**: JSON形式での出力
