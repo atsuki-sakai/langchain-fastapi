@@ -1,1 +1,33 @@
+# Core FastAPI
 fastapi[all]
+uvicorn[standard]
+
+# Authentication & Security
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# Database
+sqlalchemy
+alembic
+asyncpg
+psycopg2-binary
+
+# Validation & Settings
+email-validator
+python-dotenv
+pydantic-settings
+
+# Logging
+structlog
+
+# Testing
+pytest
+pytest-asyncio
+httpx
+
+# CORS & Middleware
+# FastAPIに含まれているCORSミドルウェアを使用するため、追加パッケージ不要
+
+# Utilities
+python-dateutil
