@@ -1,21 +1,24 @@
 import asyncio
+from typing import AsyncGenerator  # noqa: F401
+
 import pytest
 import pytest_asyncio
-from typing import AsyncGenerator, Generator
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from app.core.database import Base, get_db
+
 from app.core.config import Settings, get_settings
+from app.core.database import Base, get_db
 from app.core.security import create_access_token
-from app.models.user import UserCreate, UserInDB
+from app.models.user import UserCreate
 from app.services.user import create_user
 from main import app
 
 # Test database URL (in-memory SQLite)
 TEST_DATABASE_URL = "sqlite:///:memory:"
+
 
 # Test settings
 def get_test_settings() -> Settings:
@@ -29,6 +32,7 @@ def get_test_settings() -> Settings:
         cors_origins=["http://localhost:3000"],
     )
 
+
 # Override dependency
 app.dependency_overrides[get_settings] = get_test_settings
 
@@ -40,7 +44,7 @@ def engine():
     engine = create_engine(
         TEST_DATABASE_URL,
         poolclass=StaticPool,
-        connect_args={"check_same_thread": False}
+        connect_args={"check_same_thread": False},
     )
     Base.metadata.create_all(bind=engine)
     yield engine
@@ -50,11 +54,7 @@ def engine():
 @pytest.fixture(scope="function")
 def db_session(engine):
     """Create test database session."""
-    TestingSessionLocal = sessionmaker(
-        autocommit=False, 
-        autoflush=False, 
-        bind=engine
-    )
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = TestingSessionLocal()
     try:
         yield session
@@ -65,12 +65,13 @@ def db_session(engine):
 @pytest.fixture(scope="function")
 def client(db_session):
     """Create test client with database override."""
+
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -80,17 +81,18 @@ def client(db_session):
 @pytest_asyncio.fixture
 async def async_client(db_session):
     """Create async test client."""
+
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
-    
+
     app.dependency_overrides.clear()
 
 
@@ -104,7 +106,7 @@ def test_user_data():
         "full_name": "Test User",
         "password": "TestPassword123",
         "password_confirm": "TestPassword123",
-        "is_active": True
+        "is_active": True,
     }
 
 
@@ -117,7 +119,7 @@ def superuser_data():
         "full_name": "Admin User",
         "password": "AdminPassword123",
         "password_confirm": "AdminPassword123",
-        "is_active": True
+        "is_active": True,
     }
 
 
