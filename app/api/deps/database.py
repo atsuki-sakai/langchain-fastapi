@@ -6,7 +6,9 @@ TypeScript の PrismaClient を `req` にぶら下げてハンドラで使うよ
 """
 
 from typing import Generator
+
 from sqlalchemy.orm import Session
+
 from app.core.database import SessionLocal
 
 
