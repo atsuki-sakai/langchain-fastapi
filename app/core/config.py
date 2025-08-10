@@ -6,9 +6,9 @@ TypeScript の `zod` + `dotenv` 構成に近く、検証エラーで起動時に
 環境(`ENVIRONMENT`)に応じて `.env.dev` などを自動選択します。
 """
 
-from typing import Optional, List
 import os
 from functools import lru_cache
+from typing import List, Optional
 
 # Pydantic v2 対応インポート
 from pydantic import Field, field_validator
@@ -38,16 +38,24 @@ class Settings(BaseSettings):
     api_prefix: str = Field(default="/api/v1", validation_alias="API_PREFIX")
     # Note: pydantic-settings は List[str] を環境変数から読み込む際に JSON を要求するため
     # カンマ区切りの入力を許容したい場合は一旦 str として受け取り、プロパティで配列に変換する
-    cors_origins_env: Optional[str] = Field(default=None, validation_alias="CORS_ORIGINS")
+    cors_origins_env: Optional[str] = Field(
+        default=None, validation_alias="CORS_ORIGINS"
+    )
 
     # Database
     database_url: Optional[str] = Field(default=None, validation_alias="DATABASE_URL")
-    database_test_url: Optional[str] = Field(default=None, validation_alias="DATABASE_TEST_URL")
+    database_test_url: Optional[str] = Field(
+        default=None, validation_alias="DATABASE_TEST_URL"
+    )
 
     # Security
     secret_key: str = Field(validation_alias="SECRET_KEY")
-    access_token_expire_minutes: int = Field(default=30, validation_alias="ACCESS_TOKEN_EXPIRE_MINUTES")
-    refresh_token_expire_days: int = Field(default=7, validation_alias="REFRESH_TOKEN_EXPIRE_DAYS")
+    access_token_expire_minutes: int = Field(
+        default=30, validation_alias="ACCESS_TOKEN_EXPIRE_MINUTES"
+    )
+    refresh_token_expire_days: int = Field(
+        default=7, validation_alias="REFRESH_TOKEN_EXPIRE_DAYS"
+    )
     algorithm: str = Field(default="HS256", validation_alias="ALGORITHM")
 
     # Password hashing
@@ -58,8 +66,33 @@ class Settings(BaseSettings):
     log_format: str = Field(default="json", validation_alias="LOG_FORMAT")
 
     # Rate limiting
-    rate_limit_requests: int = Field(default=100, validation_alias="RATE_LIMIT_REQUESTS")
-    rate_limit_per_minutes: int = Field(default=1, validation_alias="RATE_LIMIT_PER_MINUTES")
+    rate_limit_requests: int = Field(
+        default=100, validation_alias="RATE_LIMIT_REQUESTS"
+    )
+    rate_limit_per_minutes: int = Field(
+        default=1, validation_alias="RATE_LIMIT_PER_MINUTES"
+    )
+
+    # AI / LLM providers
+    openai_api_key: Optional[str] = Field(
+        default=None, validation_alias="OPENAI_API_KEY"
+    )
+    openai_model: Optional[str] = Field(default=None, validation_alias="OPENAI_MODEL")
+    openrouter_api_key: Optional[str] = Field(
+        default=None, validation_alias="OPENROUTER_API_KEY"
+    )
+    openrouter_model: Optional[str] = Field(
+        default=None, validation_alias="OPENROUTER_MODEL"
+    )
+    openrouter_base_url: str = Field(
+        default="https://openrouter.ai/api/v1", validation_alias="OPENROUTER_BASE_URL"
+    )
+    openrouter_referer: Optional[str] = Field(
+        default=None, validation_alias="OPENROUTER_HTTP_REFERER"
+    )
+    openrouter_app_title: Optional[str] = Field(
+        default=None, validation_alias="OPENROUTER_X_TITLE"
+    )
 
     # CORS_ORIGINS の派生プロパティ（文字列→配列変換）
     @property
